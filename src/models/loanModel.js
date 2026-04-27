@@ -41,5 +41,48 @@ export const LoanModel = {
     `;
     const result = await pool.query(query);
     return result.rows;
+  }, // <-- PENTING: Tambahan koma di sini untuk memisahkan fungsi
+
+  // FUNGSI BARU UNTUK TOP 3 BORROWERS
+  async getTopBorrowers() {
+    const query = `
+      WITH MemberStats AS (
+          SELECT 
+              m.id, 
+              m.full_name, 
+              m.email, 
+              m.member_type, 
+              m.joined_at,
+              COUNT(l.id) AS total_pinjaman,
+              MAX(l.loan_date) AS pinjaman_terakhir
+          FROM members m
+          JOIN loans l ON m.id = l.member_id
+          GROUP BY m.id
+      ),
+      FavoriteBooks AS (
+          SELECT 
+              l.member_id, 
+              b.title AS buku_favorit,
+              ROW_NUMBER() OVER(PARTITION BY l.member_id ORDER BY COUNT(l.id) DESC) as rn
+          FROM loans l
+          JOIN books b ON l.book_id = b.id
+          GROUP BY l.member_id, b.title
+      )
+      SELECT 
+          ms.id, 
+          ms.full_name, 
+          ms.email, 
+          ms.member_type, 
+          ms.joined_at,
+          CAST(ms.total_pinjaman AS INTEGER) as total_pinjaman,
+          fb.buku_favorit,
+          ms.pinjaman_terakhir
+      FROM MemberStats ms
+      JOIN FavoriteBooks fb ON ms.id = fb.member_id AND fb.rn = 1
+      ORDER BY ms.total_pinjaman DESC
+      LIMIT 3;
+    `;
+    const result = await pool.query(query);
+    return result.rows;
   }
 };

@@ -22,5 +22,14 @@ export const LoanController = {
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
+  }, // <-- PERBAIKAN DI SINI: Harus ada kurung kurawal penutup fungsi sebelum koma
+
+  async getTopBorrowers(req, res) {
+    try {
+      const topBorrowers = await LoanModel.getTopBorrowers();
+      res.json(topBorrowers);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    } 
   }
 };
